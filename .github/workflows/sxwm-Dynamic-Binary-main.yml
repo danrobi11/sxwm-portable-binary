@@ -39,7 +39,7 @@ jobs:
            CMD(terminal,	"st");
            CMD(browser,	"firefox");
           +CMD(dmenu,	"/home/danrobi/.local/state/nix/profiles/profile/bin/dmenu_run");
-          +CMD(background,	"feh", "--bg-scale", "/home/danrobi/Good-Pictures/desktop-background-girl.darked.png");
+          +CMD(background,	"/home/danrobi/.local/state/nix/profiles/profile/bin/feh", "--bg-scale", "/home/danrobi/Good-Pictures/desktop-background-girl.darked.png");
            
            /*
             * ————————————< Keys & Bindins >—————————————*
