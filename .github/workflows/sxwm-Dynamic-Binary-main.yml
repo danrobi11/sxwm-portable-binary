@@ -36,7 +36,7 @@ jobs:
           --- src/config.h
           +++ src/config.h
           @@ -65,7 +65,9 @@
-           CMD(terminal,	"/home/danrobi/.local/state/nix/profiles/profile/bin/st");
+           CMD(terminal,	"st");
            CMD(browser,	"firefox");
           +CMD(dmenu,	"/home/danrobi/.local/state/nix/profiles/profile/bin/dmenu_run");
           +CMD(background,	"feh", "--bg-scale", "/home/danrobi/Good-Pictures/desktop-background-girl.darked.png");
