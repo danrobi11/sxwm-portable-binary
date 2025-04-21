@@ -27,13 +27,26 @@ jobs:
             libxrandr-dev \
             libxinerama-dev
 
+      - name: Find Makefile and set working directory
+        run: |
+          MAKEFILE_DIR=$(find . -type f -name Makefile -exec dirname {} \; | head -n 1)
+          if [ -z "$MAKEFILE_DIR" ]; then
+            echo "No Makefile found in the repository"
+            exit 1
+          fi
+          echo "Makefile found in $MAKEFILE_DIR"
+          echo "MAKEFILE_DIR=$MAKEFILE_DIR" >> $GITHUB_ENV
+
       - name: Build sxwm
         run: |
-          make clean || true
+          cd $MAKEFILE_DIR
           make
+        env:
+          MAKEFILE_DIR: ${{ env.MAKEFILE_DIR }}
 
       - name: Verify binary
         run: |
+          cd $MAKEFILE_DIR
           if [ -f sxwm ]; then
             file sxwm
             ldd sxwm || true
@@ -41,16 +54,22 @@ jobs:
             echo "Binary sxwm not found"
             exit 1
           fi
+        env:
+          MAKEFILE_DIR: ${{ env.MAKEFILE_DIR }}
 
       - name: Package binary
         run: |
+          cd $MAKEFILE_DIR
           mkdir -p artifacts
           cp sxwm artifacts/
           tar -czvf artifacts/sxwm-binary.tar.gz -C artifacts sxwm
+        env:
+          MAKEFILE_DIR: ${{ env.MAKEFILE_DIR }}
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: sxwm-binary
-          path: artifacts/sxwm-binary.tar.gz
+          path: ${{ env.MAKEFILE_DIR }}/artifacts/sxwm-binary.tar.gz
           retention-days: 7
+          
