@@ -1,0 +1,56 @@
+name: Build sxwm Dynamic Binary
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            gcc \
+            make \
+            libx11-dev \
+            libxrandr-dev \
+            libxinerama-dev
+
+      - name: Build sxwm
+        run: |
+          make clean || true
+          make
+
+      - name: Verify binary
+        run: |
+          if [ -f sxwm ]; then
+            file sxwm
+            ldd sxwm || true
+          else
+            echo "Binary sxwm not found"
+            exit 1
+          fi
+
+      - name: Package binary
+        run: |
+          mkdir -p artifacts
+          cp sxwm artifacts/
+          tar -czvf artifacts/sxwm-binary.tar.gz -C artifacts sxwm
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sxwm-binary
+          path: artifacts/sxwm-binary.tar.gz
+          retention-days: 7
