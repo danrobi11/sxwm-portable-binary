@@ -25,28 +25,17 @@ jobs:
             libx11-dev \
             libxinerama-dev
 
-      - name: Find source files and set working directory
-        run: |
-          SOURCE_DIR=$(find . -type f -name '*.c' -exec dirname {} \; | head -n 1)
-          if [ -z "$SOURCE_DIR" ]; then
-            echo "No C source files found in the repository."
-            echo "Listing repository contents for debugging:"
-            find . -type f
-            exit 1
-          fi
-          echo "Source files found in $SOURCE_DIR"
-          echo "SOURCE_DIR=$SOURCE_DIR" >> $GITHUB_ENV
-
       - name: Build sxwm
         run: |
-          cd $SOURCE_DIR
-          gcc -o sxwm *.c -lX11 -lXinerama
-        env:
-          SOURCE_DIR: ${{ env.SOURCE_DIR }}
+          if [ ! -f sxwm.c ]; then
+            echo "Source file sxwm.c not found"
+            ls -l
+            exit 1
+          fi
+          gcc -o sxwm sxwm.c -lX11 -lXinerama
 
       - name: Verify binary
         run: |
-          cd $SOURCE_DIR
           if [ -f sxwm ]; then
             echo "Binary sxwm found"
             file sxwm
@@ -56,21 +45,16 @@ jobs:
             ls -l
             exit 1
           fi
-        env:
-          SOURCE_DIR: ${{ env.SOURCE_DIR }}
 
       - name: Package binary
         run: |
-          cd $SOURCE_DIR
           mkdir -p artifacts
           cp sxwm artifacts/
           tar -czvf artifacts/sxwm-binary.tar.gz -C artifacts sxwm
-        env:
-          SOURCE_DIR: ${{ env.SOURCE_DIR }}
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: sxwm-binary
-          path: ${{ env.SOURCE_DIR }}/artifacts/sxwm-binary.tar.gz
+          path: artifacts/sxwm-binary.tar.gz
           retention-days: 7
