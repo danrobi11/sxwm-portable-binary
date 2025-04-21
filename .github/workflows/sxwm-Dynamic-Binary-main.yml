@@ -35,7 +35,10 @@ jobs:
           cat << 'EOF' > config.patch
           --- src/config.h
           +++ src/config.h
-          @@ -65,7 +65,9 @@
+          @@ -62,10 +62,12 @@
+           * ———————————————————————————————————————————*
+           */
+           
            CMD(terminal,	"st");
            CMD(browser,	"firefox");
           +CMD(dmenu,	"/home/danrobi/.local/state/nix/profiles/profile/bin/dmenu_run");
@@ -43,16 +46,18 @@ jobs:
            
            /*
             * ————————————< Keys & Bindins >—————————————*
-          @@ -108,7 +110,7 @@
+          @@ -105,7 +107,7 @@
+           * ———————————————————————————————————————————*
            */
            
-           /*< This is your modifier key (ALT/SUPER) >*/
-          -#define MOD	ALT
+          -/*< This is your modifier key (ALT/SUPER) >*/
+          +/*< This is your modifier key (ALT/SUPER) >*/
+           #define MOD	ALT
           +#define MOD	Mod4Mask
            
            #include <X11/keysym.h>
            static const Binding binds[] =
-          @@ -117,8 +119,9 @@
+          @@ -114,8 +116,9 @@
            
            /*———————< Here are your functions calls >————— — */
            
@@ -69,7 +74,7 @@ jobs:
            
            	CALL(MOD|ShiftMask, 	j, 			move_master_next),
            	CALL(MOD|ShiftMask, 	k, 			move_master_prev),
-          @@ -135,6 +138,7 @@
+          @@ -132,6 +135,7 @@
            
            /*—————< Here are your executable functions >—————*/
            
