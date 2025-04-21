@@ -41,7 +41,11 @@ jobs:
             echo "Source file src/sxwm.c not found."
             exit 1
           fi
-          echo "Makefile and source files found"
+          if [ ! -f src/config.h ]; then
+            echo "Configuration file src/config.h not found."
+            exit 1
+          fi
+          echo "Makefile, source files, and config.h found"
 
       - name: Build sxwm
         run: |
@@ -69,11 +73,12 @@ jobs:
             exit 1
           fi
 
-      - name: Package binary
+      - name: Package binary and source files
         run: |
           mkdir -p artifacts
           cp sxwm artifacts/
-          tar -czvf artifacts/sxwm-binary.tar.gz -C artifacts sxwm
+          cp -r src artifacts/
+          tar -czvf artifacts/sxwm-binary.tar.gz -C artifacts sxwm src
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
