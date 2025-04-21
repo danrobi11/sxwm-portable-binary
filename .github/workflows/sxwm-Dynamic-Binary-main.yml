@@ -35,7 +35,7 @@ jobs:
           cat << 'EOF' > config.patch
           --- src/config.h
           +++ src/config.h
-          @@ -62,10 +62,12 @@
+          @@ -59,13 +59,15 @@
            * ———————————————————————————————————————————*
            */
            
@@ -46,7 +46,11 @@ jobs:
            
            /*
             * ————————————< Keys & Bindins >—————————————*
-          @@ -105,7 +107,7 @@
+            *
+            *	   This is where you set your keybinds to
+            *	   execute apps. You can use the CMD macro
+            *	   to make new variables.
+          @@ -102,7 +104,7 @@
            * ———————————————————————————————————————————*
            */
            
@@ -57,7 +61,7 @@ jobs:
            
            #include <X11/keysym.h>
            static const Binding binds[] =
-          @@ -114,8 +116,9 @@
+          @@ -111,8 +113,9 @@
            
            /*———————< Here are your functions calls >————— — */
            
@@ -72,9 +76,9 @@ jobs:
           +	CALL(MOD,		XK_Left,		focus_next),
           +	CALL(MOD,		XK_Right,		focus_prev),
            
-           	CALL(MOD|ShiftMask, 	j, 			move_master_next),
-           	CALL(MOD|ShiftMask, 	k, 			move_master_prev),
-          @@ -132,6 +135,7 @@
+           	CALL(MOD|SHIFT, 	j, 			move_master_next),
+           	CALL(MOD|SHIFT, 	k, 			move_master_prev),
+          @@ -129,6 +132,7 @@
            
            /*—————< Here are your executable functions >—————*/
            
