@@ -25,37 +25,40 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y \
             gcc \
+            make \
             libx11-dev \
             libxinerama-dev
 
-      - name: Check for source files
+      - name: Check for Makefile and source files
         run: |
           echo "Listing repository contents for debugging:"
           find . -type f
-          SOURCE_DIR=$(find . -type f -name '*.c' -exec dirname {} \; | head -n 1)
-          if [ -z "$SOURCE_DIR" ]; then
-            echo "No C source files found in the repository."
-            echo "Please provide the source file names or build command."
+          if [ ! -f Makefile ]; then
+            echo "No Makefile found in the repository."
             exit 1
           fi
-          echo "Source files found in $SOURCE_DIR"
-          echo "SOURCE_DIR=$SOURCE_DIR" >> $GITHUB_ENV
+          if [ ! -f src/sxwm.c ]; then
+            echo "Source file src/sxwm.c not found."
+            exit 1
+          fi
+          echo "Makefile and source files found"
 
       - name: Build sxwm
         run: |
-          cd $SOURCE_DIR
-          # Replace with the actual build command, e.g.:
-          # gcc -o sxwm sxwm.c -lX11 -lXinerama
-          # or
-          # make
-          echo "Please provide the actual build command for sxwm"
-          exit 1
-        env:
-          SOURCE_DIR: ${{ env.SOURCE_DIR }}
+          make
+          if [ -f sxwm ]; then
+            echo "Binary sxwm found in root"
+          elif [ -f src/sxwm ]; then
+            echo "Binary sxwm found in src/"
+            mv src/sxwm .
+          else
+            echo "Binary sxwm not found"
+            ls -l src/
+            exit 1
+          fi
 
       - name: Verify binary
         run: |
-          cd $SOURCE_DIR
           if [ -f sxwm ]; then
             echo "Binary sxwm found"
             file sxwm
@@ -65,21 +68,16 @@ jobs:
             ls -l
             exit 1
           fi
-        env:
-          SOURCE_DIR: ${{ env.SOURCE_DIR }}
 
       - name: Package binary
         run: |
-          cd $SOURCE_DIR
           mkdir -p artifacts
           cp sxwm artifacts/
           tar -czvf artifacts/sxwm-binary.tar.gz -C artifacts sxwm
-        env:
-          SOURCE_DIR: ${{ env.SOURCE_DIR }}
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: sxwm-binary
-          path: ${{ env.SOURCE_DIR }}/artifacts/sxwm-binary.tar.gz
+          path: artifacts/sxwm-binary.tar.gz
           retention-days: 7
