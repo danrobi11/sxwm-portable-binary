@@ -14,8 +14,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout uint23/sxwm repository
         uses: actions/checkout@v4
+        with:
+          repository: uint23/sxwm
+          ref: main
 
       - name: Install dependencies
         run: |
@@ -25,17 +28,34 @@ jobs:
             libx11-dev \
             libxinerama-dev
 
-      - name: Build sxwm
+      - name: Check for source files
         run: |
-          if [ ! -f sxwm.c ]; then
-            echo "Source file sxwm.c not found"
-            ls -l
+          echo "Listing repository contents for debugging:"
+          find . -type f
+          SOURCE_DIR=$(find . -type f -name '*.c' -exec dirname {} \; | head -n 1)
+          if [ -z "$SOURCE_DIR" ]; then
+            echo "No C source files found in the repository."
+            echo "Please provide the source file names or build command."
             exit 1
           fi
-          gcc -o sxwm sxwm.c -lX11 -lXinerama
+          echo "Source files found in $SOURCE_DIR"
+          echo "SOURCE_DIR=$SOURCE_DIR" >> $GITHUB_ENV
+
+      - name: Build sxwm
+        run: |
+          cd $SOURCE_DIR
+          # Replace with the actual build command, e.g.:
+          # gcc -o sxwm sxwm.c -lX11 -lXinerama
+          # or
+          # make
+          echo "Please provide the actual build command for sxwm"
+          exit 1
+        env:
+          SOURCE_DIR: ${{ env.SOURCE_DIR }}
 
       - name: Verify binary
         run: |
+          cd $SOURCE_DIR
           if [ -f sxwm ]; then
             echo "Binary sxwm found"
             file sxwm
@@ -45,16 +65,21 @@ jobs:
             ls -l
             exit 1
           fi
+        env:
+          SOURCE_DIR: ${{ env.SOURCE_DIR }}
 
       - name: Package binary
         run: |
+          cd $SOURCE_DIR
           mkdir -p artifacts
           cp sxwm artifacts/
           tar -czvf artifacts/sxwm-binary.tar.gz -C artifacts sxwm
+        env:
+          SOURCE_DIR: ${{ env.SOURCE_DIR }}
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: sxwm-binary
-          path: artifacts/sxwm-binary.tar.gz
+          path: ${{ env.SOURCE_DIR }}/artifacts/sxwm-binary.tar.gz
           retention-days: 7
