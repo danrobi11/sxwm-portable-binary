@@ -35,50 +35,24 @@ jobs:
           cat << 'EOF' > config.patch
           --- src/config.h
           +++ src/config.h
-          @@ -69,7 +69,7 @@
-           * ———————————————————————————————————————————*
-           *
-           */
-           
-          -CMD(terminal,	"st");
-          +CMD(terminal,	"/home/danrobi/.local/state/nix/profiles/profile/bin/st");
+          @@ -65,7 +65,9 @@
+           CMD(terminal,	"/home/danrobi/.local/state/nix/profiles/profile/bin/st");
            CMD(browser,	"firefox");
           +CMD(dmenu,	"/home/danrobi/.local/state/nix/profiles/profile/bin/dmenu_run");
           +CMD(background,	"feh", "--bg-scale", "/home/danrobi/Good-Pictures/desktop-background-girl.darked.png");
            
            /*
-          @@ -80,7 +82,7 @@
-           *     This is where you assign keybinds to
-           *     perform some actions.
-           *
-          - *     How do you bind keys? In sxwm, there is
-          + *     How do you bind keys? In sxwm, there are
-           *     three ways to bind keys to perform
-           *     tasks:
-           *
-          @@ -103,10 +105,10 @@
-           *     	 Otherwise, put the program you
-           *     	 either defined with the CMD above
-           *     	 or you can skip that step and just
-          - *     	 do something like this to create a
-          + *     	 do something like this to create
-           *     	 a "string" in the bindings array:
-           *
-          - *     	 { "program", "arg1", NULL }
-          + *     	 { "program", "arg1", NULL }
-           *
-           *     End the line with a comma, as this is
-           *     an array.
-          @@ -114,7 +116,7 @@
+            * ————————————< Keys & Bindins >—————————————*
+          @@ -108,7 +110,7 @@
            */
            
            /*< This is your modifier key (ALT/SUPER) >*/
           -#define MOD	ALT
-          +#define MOD	SUPER
+          +#define MOD	Mod4Mask
            
            #include <X11/keysym.h>
            static const Binding binds[] =
-          @@ -123,8 +125,9 @@
+          @@ -117,8 +119,9 @@
            
            /*———————< Here are your functions calls >————— — */
            
@@ -95,7 +69,7 @@ jobs:
            
            	CALL(MOD|ShiftMask, 	j, 			move_master_next),
            	CALL(MOD|ShiftMask, 	k, 			move_master_prev),
-          @@ -141,6 +144,7 @@
+          @@ -135,6 +138,7 @@
            
            /*—————< Here are your executable functions >—————*/
            
@@ -105,7 +79,7 @@ jobs:
            
            /*—————< This is for workspaces >—————————————————*/
           EOF
-          patch -p1 < config.patch || { echo "Patch failed"; cat config.patch; exit 1; }
+          patch -p1 < config.patch || { echo "Patch failed"; cat config.patch; cat src/config.h; exit 1; }
 
       - name: Check for Makefile and source files
         run: |
