@@ -1,3 +1,4 @@
+```yaml
 name: Build sxwm Dynamic Binary
 
 on:
@@ -85,9 +86,19 @@ jobs:
           cp sxwm artifacts/
           # Copy source files
           cp -r src artifacts/
-          # Copy required shared libraries
-          for lib in $(ldd sxwm | grep -o '/[^ ]*'); do
-            cp "$lib" artifacts/lib/
+          # Copy required shared libraries and their symlinks
+          for lib in libXcursor.so.1 libX11.so.6 libXinerama.so.1 libXau.so.6 libXdmcp.so.6 libxcb.so.1; do
+            lib_path=$(find /usr/lib /usr/lib64 -name "$lib" -type f -o -type l | head -n 1)
+            if [ -n "$lib_path" ]; then
+              cp -L "$lib_path" artifacts/lib/
+              # Copy the versioned library if it’s a symlink
+              real_lib=$(readlink -f "$lib_path")
+              if [ "$real_lib" != "$lib_path" ]; then
+                cp -L "$real_lib" artifacts/lib/
+              fi
+            else
+              echo "Warning: Library $lib not found"
+            fi
           done
           # Create a wrapper script to set LD_LIBRARY_PATH
           cat << 'EOF' > artifacts/run_sxwm.sh
@@ -111,3 +122,4 @@ jobs:
           name: sxwm-binary
           path: artifacts/sxwm-binary.tar.gz
           retention-days: 7
+```
