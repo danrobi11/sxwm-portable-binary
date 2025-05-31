@@ -29,6 +29,9 @@ jobs:
             libx11-dev \
             libxinerama-dev \
             libxcursor-dev \
+            libx11-6 \
+            libxinerama1 \
+            libxcursor1 \
             patch
 
       - name: Check for Makefile and source files
@@ -75,12 +78,32 @@ jobs:
             exit 1
           fi
 
-      - name: Package binary and source files
+      - name: Bundle shared libraries
         run: |
-          mkdir -p artifacts
+          mkdir -p artifacts/lib
+          # Copy the binary
           cp sxwm artifacts/
+          # Copy source files
           cp -r src artifacts/
-          tar -czvf artifacts/sxwm-binary.tar.gz -C artifacts sxwm src
+          # Copy required shared libraries
+          for lib in $(ldd sxwm | grep -o '/[^ ]*'); do
+            cp "$lib" artifacts/lib/
+          done
+          # Create a wrapper script to set LD_LIBRARY_PATH
+          cat << 'EOF' > artifacts/run_sxwm.sh
+          #!/bin/bash
+          SCRIPT_DIR=$(dirname "$(realpath "$0")")
+          export LD_LIBRARY_PATH="$SCRIPT_DIR/lib:$LD_LIBRARY_PATH"
+          exec "$SCRIPT_DIR/sxwm" "$@"
+          EOF
+          chmod +x artifacts/run_sxwm.sh
+          # List bundled libraries for verification
+          echo "Bundled libraries:"
+          ls -l artifacts/lib/
+
+      - name: Package binary, source files, and libraries
+        run: |
+          tar -czvf artifacts/sxwm-binary.tar.gz -C artifacts sxwm src lib run_sxwm.sh
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
