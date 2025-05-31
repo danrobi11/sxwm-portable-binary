@@ -1,4 +1,3 @@
-```yaml
 name: Build sxwm Dynamic Binary
 
 on:
@@ -122,4 +121,4 @@ jobs:
           name: sxwm-binary
           path: artifacts/sxwm-binary.tar.gz
           retention-days: 7
-```
+
