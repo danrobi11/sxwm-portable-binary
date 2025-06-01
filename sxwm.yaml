@@ -1,0 +1,131 @@
+name: Build sxwm Dynamic Binary
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout uint23/sxwm repository
+        uses: actions/checkout@v4
+        with:
+          repository: uint23/sxwm
+          ref: main
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            gcc \
+            make \
+            libx11-dev \
+            libxinerama-dev \
+            libxcursor-dev \
+            libxrender-dev \
+            libxfixes-dev \
+            libxext-dev \
+            libx11-6 \
+            libxinerama1 \
+            libxcursor1 \
+            libxrender1 \
+            libxfixes3 \
+            libxext6 \
+            libbsd0 \
+            libmd0 \
+            patch
+
+      - name: Check for Makefile and source files
+        run: |
+          echo "Listing repository contents for debugging:"
+          find . -type f
+          if [ ! -f Makefile ]; then
+            echo "No Makefile found in the repository."
+            exit 1
+          fi
+          if [ ! -f src/sxwm.c ]; then
+            echo "Source file src/sxwm.c not found."
+            exit 1
+          fi
+          if [ ! -f src/config.h ]; then
+            echo "Configuration file src/config.h not found."
+            exit 1
+          fi
+          echo "Makefile, source files, and config.h found"
+
+      - name: Build sxwm
+        run: |
+          make
+          if [ -f sxwm ]; then
+            echo "Binary sxwm found in root"
+          elif [ -f src/sxwm ]; then
+            echo "Binary sxwm found in src/"
+            mv src/sxwm .
+          else
+            echo "Binary sxwm not found"
+            ls -l src/
+            exit 1
+          fi
+
+      - name: Verify binary
+        run: |
+          if [ -f sxwm ]; then
+            echo "Binary sxwm found"
+            file sxwm
+            ldd sxwm || true
+          else
+            echo "Binary sxwm not found"
+            ls -l
+            exit 1
+          fi
+
+      - name: Bundle shared libraries
+        run: |
+          mkdir -p artifacts/lib
+          cp sxwm artifacts/
+          cp -r src artifacts/
+          # List of required libraries from ldd sxwm
+          libs="libXcursor.so.1 libX11.so.6 libXinerama.so.1 libXau.so.6 libXdmcp.so.6 libxcb.so.1 libXext.so.6 libXrender.so.1 libXfixes.so.3 libbsd.so.0 libmd.so.0"
+          for lib in $libs; do
+            # Locate library in standard paths
+            lib_path=$(ls /usr/lib/x86_64-linux-gnu/$lib 2>/dev/null || ls /usr/lib/$lib 2>/dev/null || true)
+            if [ -z "$lib_path" ]; then
+              echo "Error: Library $lib not found"
+              exit 1
+            fi
+            # Copy library and dereferenced file
+            cp -v "$lib_path" artifacts/lib/ || { echo "Failed to copy $lib"; exit 1; }
+            real_lib=$(readlink -f "$lib_path" 2>/dev/null || echo "$lib_path")
+            if [ "$real_lib" != "$lib_path" ] && [ -f "$real_lib" ]; then
+              cp -v "$real_lib" artifacts/lib/ || { echo "Failed to copy $real_lib"; exit 1; }
+            fi
+          done
+          # Create wrapper script
+          cat << 'EOF' > artifacts/run_sxwm.sh
+          #!/bin/bash
+          SCRIPT_DIR=$(dirname "$(realpath "$0")")
+          export LD_LIBRARY_PATH="$SCRIPT_DIR/lib:$LD_LIBRARY_PATH"
+          exec "$SCRIPT_DIR/sxwm" "$@"
+          EOF
+          chmod +x artifacts/run_sxwm.sh
+          # Verify bundled libraries
+          echo "Bundled libraries:"
+          ls -l artifacts/lib/
+
+      - name: Package binary, source files, and libraries
+        run: |
+          tar -czvf artifacts/sxwm-binary.tar.gz -C artifacts sxwm src lib run_sxwm.sh
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sxwm-binary
+          path: artifacts/sxwm-binary.tar.gz
+          retention-days: 7
