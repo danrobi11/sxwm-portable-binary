@@ -20,6 +20,13 @@ jobs:
           repository: danrobi11/sxwm
           ref: test
 
+      - name: Cache apt packages
+        uses: actions/cache@v4
+        with:
+          path: /var/cache/apt/archives
+          key: ${{ runner.os }}-apt-${{ hashFiles('**/apt-get-install.txt') }}
+          restore-keys: ${{ runner.os }}-apt-
+
       - name: Install dependencies
         run: |
           sudo apt-get update
@@ -56,11 +63,13 @@ jobs:
               exit 1
             fi
           done
+          echo "Checking syntax of sxwm.c:"
+          gcc -fsyntax-only -Isrc src/sxwm.c || { echo "Syntax error in src/sxwm.c"; exit 1; }
           echo "Makefile and all source files found"
 
       - name: Build sxwm
         run: |
-          make
+          make CC=gcc CFLAGS="-std=c99 -Wall -Wextra -O3 -Isrc"
           if [ -f sxwm ]; then
             echo "Binary sxwm found in root"
           elif [ -f src/sxwm ]; then
@@ -71,6 +80,12 @@ jobs:
             ls -l src/
             exit 1
           fi
+
+      - name: Debug sxwm.c on build failure
+        if: failure()
+        run: |
+          echo "Displaying last 50 lines of src/sxwm.c for debugging:"
+          tail -n 50 src/sxwm.c
 
       - name: Verify binary
         run: |
@@ -92,17 +107,15 @@ jobs:
           # List of required libraries from ldd sxwm
           libs="libXcursor.so.1 libX11.so.6 libXinerama.so.1 libXau.so.6 libXdmcp.so.6 libxcb.so.1 libXext.so.6 libXrender.so.1 libXfixes.so.3"
           for lib in $libs; do
-            # Locate library in standard paths
             lib_path=$(find /usr/lib/x86_64-linux-gnu /usr/lib -name "$lib" -type f | head -n 1)
             if [ -z "$lib_path" ]; then
               echo "Error: Library $lib not found"
               exit 1
             fi
-            # Copy library and dereferenced file
-            cp -v "$lib_path" artifacts/lib/ || { echo "Failed to copy $lib"; exit 1; }
+            cp -v "$lib_path" artifacts/lib/ || exit 1
             real_lib=$(readlink -f "$lib_path" 2>/dev/null || echo "$lib_path")
             if [ "$real_lib" != "$lib_path" ] && [ -f "$real_lib" ]; then
-              cp -v "$real_lib" artifacts/lib/ || { echo "Failed to copy $real_lib"; exit 1; }
+              cp -v "$real_lib" artifacts/lib/ || exit 1
             fi
           done
           # Create wrapper script
