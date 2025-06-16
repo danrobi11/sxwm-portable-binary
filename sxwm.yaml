@@ -3,10 +3,10 @@ name: Build sxwm Dynamic Binary
 on:
   push:
     branches:
-      - main
+      - test
   pull_request:
     branches:
-      - main
+      - test
   workflow_dispatch:
 
 jobs:
@@ -14,11 +14,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout uint23/sxwm repository
+      - name: Checkout danrobi11/sxwm repository
         uses: actions/checkout@v4
         with:
-          repository: uint23/sxwm
-          ref: main
+          repository: danrobi11/sxwm
+          ref: test
 
       - name: Install dependencies
         run: |
@@ -50,15 +50,13 @@ jobs:
             echo "No Makefile found in the repository."
             exit 1
           fi
-          if [ ! -f src/sxwm.c ]; then
-            echo "Source file src/sxwm.c not found."
-            exit 1
-          fi
-          if [ ! -f src/config.h ]; then
-            echo "Configuration file src/config.h not found."
-            exit 1
-          fi
-          echo "Makefile, source files, and config.h found"
+          for file in sxwm.c config.h parser.c parser.h defs.h; do
+            if [ ! -f src/$file ]; then
+              echo "Source file src/$file not found."
+              exit 1
+            fi
+          done
+          echo "Makefile and all source files found"
 
       - name: Build sxwm
         run: |
@@ -92,10 +90,10 @@ jobs:
           cp sxwm artifacts/
           cp -r src artifacts/
           # List of required libraries from ldd sxwm
-          libs="libXcursor.so.1 libX11.so.6 libXinerama.so.1 libXau.so.6 libXdmcp.so.6 libxcb.so.1 libXext.so.6 libXrender.so.1 libXfixes.so.3 libbsd.so.0 libmd.so.0"
+          libs="libXcursor.so.1 libX11.so.6 libXinerama.so.1 libXau.so.6 libXdmcp.so.6 libxcb.so.1 libXext.so.6 libXrender.so.1 libXfixes.so.3"
           for lib in $libs; do
             # Locate library in standard paths
-            lib_path=$(ls /usr/lib/x86_64-linux-gnu/$lib 2>/dev/null || ls /usr/lib/$lib 2>/dev/null || true)
+            lib_path=$(find /usr/lib/x86_64-linux-gnu /usr/lib -name "$lib" -type f | head -n 1)
             if [ -z "$lib_path" ]; then
               echo "Error: Library $lib not found"
               exit 1
